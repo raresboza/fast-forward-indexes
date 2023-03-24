@@ -14,7 +14,7 @@ from scipy.spatial.distance import cosine
 
 from fast_forward.ranking import Ranking
 from fast_forward.encoder import QueryEncoder
-from fast_forward.util import interpolate
+from fast_forward.util import interpolate, reciprocal_ranked_fusion
 
 
 LOGGER = logging.getLogger(__name__)
@@ -300,6 +300,7 @@ class Index(abc.ABC):
         alpha: Union[float, Iterable[float]] = 0.0,
         cutoff: int = None,
         early_stopping: bool = False,
+        rrf: bool = False,
     ) -> Dict[float, Ranking]:
         """Compute corresponding dense scores for a ranking and interpolate.
 
@@ -340,9 +341,14 @@ class Index(abc.ABC):
                     else:
                         dense_run[q_id][id] = score
             for a in alpha:
-                result[a] = interpolate(
-                    ranking, Ranking(dense_run, sort=False), a, sort=True
-                )
+                if not rrf:
+                    result[a] = interpolate(
+                        ranking, Ranking(dense_run, sort=False), a, sort=True
+                    )
+                else:
+                    result[a] = reciprocal_ranked_fusion(
+                        ranking, Ranking(dense_run, sort=True), sort=True
+                    )
                 if cutoff is not None:
                     result[a].cut(cutoff)
         else:

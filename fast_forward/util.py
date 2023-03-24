@@ -31,3 +31,22 @@ def interpolate(
                 alpha * r1[q_id][doc_id] + (1 - alpha) * r2[q_id][doc_id]
             )
     return Ranking(results, name=name, sort=sort, copy=False)
+
+
+def reciprocal_ranked_fusion(
+        r1: Ranking, r2: Ranking, name: str = None, sort: bool = True
+) -> Ranking:
+    assert r1.q_ids == r2.q_ids
+    results = defaultdict(dict)
+    for q_id in r1:
+        query_documents = r1[q_id].keys() & r2[q_id].keys()
+        r1_q_ids = list(r1[q_id].keys())
+        r2_q_ids = list(r2[q_id].keys())
+        # r2_q_ids = [doc[0] for doc in sorted(r2[q_id].items(), key=lambda x: x[1], reverse=True)]
+        for doc_id in query_documents:
+            # compute places of the document in both rankings
+            position_in_r1 = r1_q_ids.index(doc_id)
+            position_in_r2 = r2_q_ids.index(doc_id)
+            # compute the score
+            results[q_id][doc_id] = (1.0 / (position_in_r1 + 1)) + (1.0 / (position_in_r2 + 1))
+    return Ranking(results, name=name, sort=sort, copy=False)
