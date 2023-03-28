@@ -36,6 +36,8 @@ def interpolate(
 def reciprocal_ranked_fusion(
         r1: Ranking, r2: Ranking, name: str = None, sort: bool = True
 ) -> Ranking:
+    #r1 = normalise_ranking(r1)
+    #r2 = normalise_ranking(r2)
     assert r1.q_ids == r2.q_ids
     results = defaultdict(dict)
     for q_id in r1:
@@ -50,3 +52,13 @@ def reciprocal_ranked_fusion(
             # compute the score
             results[q_id][doc_id] = (1.0 / (position_in_r1 + 1)) + (1.0 / (position_in_r2 + 1))
     return Ranking(results, name=name, sort=sort, copy=False)
+
+
+def normalise_ranking(r: Ranking, name: str = None, sort: bool = True) -> Ranking:
+    normalised_result = defaultdict(dict)
+    for q_id in r:
+        max_score = float(max(r[q_id].items(), key=lambda x: x[1])[1])
+        min_score = float(min(r[q_id].items(), key=lambda x: x[1])[1])
+        for doc_id in r[q_id].keys():
+            normalised_result[q_id][doc_id] = (r[q_id][doc_id] - min_score) / (max_score - min_score)
+        return Ranking(normalised_result, name=name, sort=sort, copy=False)
