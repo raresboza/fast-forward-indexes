@@ -8,7 +8,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 def interpolate(
-    r1: Ranking, r2: Ranking, alpha: float, name: str = None, sort: bool = True
+    r1: Ranking, r2: Ranking, alpha: float, name: str = None, sort: bool = True, normalization: str = "off"
 ) -> Ranking:
     """Interpolate scores. For each query-doc pair:
         * If the pair has only one score, ignore it.
@@ -24,8 +24,14 @@ def interpolate(
     Returns:
         Ranking: Interpolated ranking.
     """
-    # r1 = normalise_ranking(r1)
-    # r2 = normalise_ranking(r2)
+    if normalization == "local":
+        r1 = normalise_ranking(r1)
+        r2 = normalise_ranking(r2)
+    elif normalization == "global":
+        r1 = normalise_all_ranking(r1)
+        r2 = normalise_all_ranking(r2)
+    # else don't do anything
+
     assert r1.q_ids == r2.q_ids
     results = defaultdict(dict)
     for q_id in r1:
@@ -37,10 +43,16 @@ def interpolate(
 
 
 def reciprocal_ranked_fusion(
-        r1: Ranking, r2: Ranking, name: str = None, sort: bool = True
+        r1: Ranking, r2: Ranking, name: str = None, sort: bool = True, normalization: str = "off"
 ) -> Ranking:
-    # r1 = normalise_ranking(r1)
-    # r2 = normalise_ranking(r2)
+    if normalization == "local":
+        r1 = normalise_ranking(r1)
+        r2 = normalise_ranking(r2)
+    elif normalization == "global":
+        r1 = normalise_all_ranking(r1)
+        r2 = normalise_all_ranking(r2)
+    # else don't do anything
+
     assert r1.q_ids == r2.q_ids
     results = defaultdict(dict)
     for q_id in r1:

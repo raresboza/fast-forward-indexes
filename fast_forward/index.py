@@ -301,6 +301,7 @@ class Index(abc.ABC):
         cutoff: int = None,
         early_stopping: bool = False,
         rrf: bool = False,
+        normalization: str = "off",
     ) -> Dict[float, Ranking]:
         """Compute corresponding dense scores for a ranking and interpolate.
 
@@ -343,11 +344,11 @@ class Index(abc.ABC):
             for a in alpha:
                 if not rrf:
                     result[a] = interpolate(
-                        ranking, Ranking(dense_run, sort=False), a, sort=True
+                        ranking, Ranking(dense_run, sort=False), a, sort=True, normalization=normalization
                     )
                 else:
                     result[a] = reciprocal_ranked_fusion(
-                        ranking, Ranking(dense_run, sort=True), sort=True
+                        ranking, Ranking(dense_run, sort=True), sort=True, normalization=normalization
                     )
                 if cutoff is not None:
                     result[a].cut(cutoff)
