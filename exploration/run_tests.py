@@ -52,7 +52,7 @@ def fusion(sparse_ranking):
     qrels = list(read_trec_qrels("data/2019qrels-pass.txt"))
     print(
         "BM25",
-        calc_aggregate([nDCG@10, RR(rel=2)@10], qrels, sparse_ranking_2019.run)
+        calc_aggregate([nDCG@10, RR(rel=2)@10], qrels, sparse_ranking.run)
     )
     print(
         f"BM25, TCTColBERT (alpha={alpha})",
@@ -60,6 +60,46 @@ def fusion(sparse_ranking):
     )
 
 
+def cc(sparse_ranking):
+    # THIS IS FOR LOADING INDEXES FROM A PICKLE FILE
+    index = InMemoryIndex.from_disk(
+        index_file=Path("ffindex_passage_2019_2020.pkl"),
+        encoder=TCTColBERTQueryEncoderFF("castorini/tct_colbert-msmarco"),
+        mode=Mode.PASSAGE,
+    )
+
+    # Convex combination
+    with open(
+            "data/msmarco-test2019-queries.tsv",
+            encoding="utf-8",
+            newline=""
+    ) as fp:
+        queries = {q_id: q for q_id, q in csv.reader(fp, delimiter="\t")}
+    print(f"loaded {len(queries)} queries")
+
+    alpha = 0.2
+    result = index.get_scores(
+        sparse_ranking,
+        queries,
+        alpha=alpha,
+        cutoff=10,
+        early_stopping=False
+    )
+
+    qrels = list(read_trec_qrels("data/2019qrels-pass.txt"))
+    print(
+        "BM25",
+        calc_aggregate([nDCG @ 10, RR(rel=2) @ 10], qrels, sparse_ranking.run)
+    )
+    print(
+        f"BM25, TCTColBERT (alpha={alpha})",
+        calc_aggregate([nDCG @ 10, RR(rel=2) @ 10], qrels, result[alpha].run)
+    )
+
+
 if __name__ == "__main__":
     sparse_ranking_2019, sparse_ranking_2020 = setup()
+    print("RRF")
     fusion(sparse_ranking_2019)
+    print("CC")
+    cc(sparse_ranking_2019)
